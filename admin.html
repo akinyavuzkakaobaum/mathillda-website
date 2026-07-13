@@ -116,6 +116,7 @@ const ADMIN_PASSWORD = "mathillda2026";
 let supabase = null;
 
 function checkPassword() {
+  alert('Buton çalışıyor. Girilen: ' + document.getElementById('pwInput').value);
   const val = document.getElementById('pwInput').value;
   const statusEl = document.getElementById('loginStatus');
   if (val === ADMIN_PASSWORD) {
