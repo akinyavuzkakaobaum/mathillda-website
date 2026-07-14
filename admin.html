@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mathillda - Yönetim Paneli</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --bg-color: #0d131a;
@@ -111,15 +110,11 @@
     <input type="file" id="image" accept="image/*">
   </div>
 
-  <button onclick="saveProductAndTranslate()">Ürünü Çevir ve Kaydet</button>
+  <button onclick="saveProduct()">Ürünü Çevir ve Kaydet</button>
 </div>
 
 <script>
-  const SUPABASE_URL = "https://olzohyonqioucwtnkfya.supabase.co"; 
-  const SUPABASE_ANON_KEY = "Sb_publishable_Q24NDXCNYJG87Io8Wb2l4g_fOvnaKJD"; 
-  const DEEPL_API_KEY = "86b2557d-92d5-4d2c-9a90-96611ba0d74b:fx"; 
-
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const TRANSLATE_FUNCTION_URL = "https://olzohyonqioucwtnkfya.supabase.co/functions/v1/translate";
 
   function showStatus(message, type) {
     const box = document.getElementById('statusBox');
@@ -127,29 +122,17 @@
     box.innerHTML = message;
   }
 
-  async function translateText(text, targetLang) {
-    if (!text) return "";
-    try {
-      const response = await fetch("https://api-free.deepl.com/v2/translate", {
-        method: "POST",
-        headers: {
-          "Authorization": `DeepL-Auth-Key ${DEEPL_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ 
-          text: [text], 
-          target_lang: targetLang 
-        })
-      });
-      const data = await response.json();
-      return data.translations[0].text;
-    } catch (err) {
-      console.error("Çeviri Hatası:", err);
-      return text;
-    }
+  // Dosyayı Base64 formatına çevirme fonksiyonu
+  function toBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = error => reject(error);
+    });
   }
 
-  async function saveProductAndTranslate() {
+  async function saveProduct() {
     const category = document.getElementById('category').value;
     const name_tr = document.getElementById('name_tr').value;
     const price = document.getElementById('price').value;
@@ -161,48 +144,36 @@
       return;
     }
 
-    showStatus("Görsel yükleniyor ve çeviriler yapılıyor... Lütfen bekleyin.", "loading");
+    showStatus("Ürün bilgileri ve görsel gönderiliyor... Lütfen bekleyin.", "loading");
 
     try {
-      const fileExt = imageFile.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `product-images/${fileName}`;
-
-      const { data: uploadData, error: uploadError } = await supabaseClient.storage
-        .from('images')
-        .upload(filePath, imageFile);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabaseClient.storage
-        .from('images')
-        .getPublicUrl(filePath);
-
-      const languages = ['DE', 'EN', 'FR', 'IT', 'ES', 'RU', 'AR'];
-      const translations = {};
-
-      for (const lang of languages) {
-        showStatus(`Türkçe içerik ${lang} diline çevriliyor...`, "loading");
-        const lowerLang = lang.toLowerCase();
-        translations[`name_${lowerLang}`] = await translateText(name_tr, lang);
-        translations[`description_${lowerLang}`] = await translateText(description_tr, lang);
-      }
-
-      const { error: insertError } = await supabaseClient
-        .from('products')
-        .insert([{
+      const base64Image = await toBase64(imageFile);
+      
+      // Tüm veriyi ve görseli doğrudan Supabase Edge fonksiyonunuza gönderiyoruz
+      const response = await fetch(TRANSLATE_FUNCTION_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
           category: category,
           price: parseFloat(price),
-          image_url: publicUrl,
           name_tr: name_tr,
           description_tr: description_tr,
-          ...translations
-        }]);
+          image_data: base64Image,
+          image_name: imageFile.name
+        })
+      });
 
-      if (insertError) throw insertError;
+      const result = await response.json();
 
-      showStatus("Ürün başarıyla kaydedildi ve tüm dillere otomatik çevrildi! 🎉", "success");
+      if (!response.ok) {
+        throw new Error(result.error || "Sunucu hatası oluştu.");
+      }
+
+      showStatus("Ürün başarıyla kaydedildi ve otomatik çevrildi! 🎉", "success");
       
+      // Formu temizle
       document.getElementById('name_tr').value = "";
       document.getElementById('price').value = "";
       document.getElementById('description_tr').value = "";
