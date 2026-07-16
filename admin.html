@@ -1,587 +1,427 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mathillda - Yönetim Paneli</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    :root {
-      --bg-color: #0d131a;
-      --card-bg: #151f2b;
-      --text-color: #f1f5f9;
-      --accent-color: #d4af37;
-    }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-      margin: 0;
-      padding: 15px;
-    }
-    .container {
-      max-width: 100%;
-      background: var(--card-bg);
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-      border: 1px solid rgba(212, 175, 55, 0.2);
-      box-sizing: border-box;
-    }
-    h1, h2 {
-      color: var(--accent-color);
-      text-align: center;
-      margin-top: 0;
-    }
-    .form-group {
-      margin-bottom: 15px;
-    }
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-      color: var(--accent-color);
-    }
-    input[type="text"], input[type="number"], select, textarea {
-      width: 100%;
-      padding: 12px;
-      border-radius: 6px;
-      border: 1px solid #2e3e52;
-      background-color: #0b1118;
-      color: #fff;
-      font-size: 16px;
-      box-sizing: border-box;
-    }
-    button {
-      width: 100%;
-      padding: 14px;
-      background-color: var(--accent-color);
-      color: #000;
-      border: none;
-      border-radius: 6px;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .status {
-      margin-top: 15px;
-      padding: 12px;
-      border-radius: 6px;
-      text-align: center;
-      display: none;
-      word-break: break-all;
-    }
-    .status.success { background-color: #1b4d3e; color: #5effbc; display: block; }
-    .status.loading { background-color: #3b2c11; color: #ffd166; display: block; }
-    .status.error { background-color: #4a1d1d; color: #ff9e9e; display: block; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mathillda - Yönetim Paneli</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --bg-color: #0d131a;
+    --card-bg: #151f2b;
+    --text-color: #f1f5f9;
+    --accent-color: #d4af37;
+    --border-color: #2e3e52;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 15px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+  }
+  h1, h2, h3 { color: var(--accent-color); text-align: center; margin-top: 0; }
+  .card {
+    max-width: 100%;
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    margin-bottom: 15px;
+  }
+  .form-group { margin-bottom: 15px; }
+  label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--accent-color); }
+  input[type="text"], input[type="number"], input[type="password"], input[type="email"], select, textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: #0b1118;
+    color: #fff;
+    font-size: 16px;
+  }
+  textarea { resize: vertical; }
+  button {
+    width: 100%;
+    padding: 14px;
+    background-color: var(--accent-color);
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    font-size: 17px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 5px;
+  }
+  button.secondary { background-color: #2e3e52; color: #fff; }
+  button.danger { background-color: #7a2323; color: #fff; }
+  .status {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 6px;
+    text-align: center;
+    display: none;
+    word-break: break-word;
+  }
+  .status.success { background-color: #1b4d3e; color: #5effbc; display: block; }
+  .status.loading { background-color: #3b2c11; color: #ffd166; display: block; }
+  .status.error { background-color: #4a1d1d; color: #ff9e9e; display: block; }
+
+  #loginOverlay {
+    position: fixed; top:0; left:0; right:0; bottom:0;
+    background: var(--bg-color);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 999;
+  }
+  .login-box { width: 100%; max-width: 340px; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 15px; }
+  .tab-btn {
+    flex: 1; padding: 12px 4px; font-size: 14px;
+    background: var(--card-bg); color: #94a3b8; border: 1px solid var(--border-color);
+  }
+  .tab-btn.active { background: var(--accent-color); color: #000; border-color: var(--accent-color); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .category-block { margin-bottom: 25px; }
+  .category-block h3 { text-align: left; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+  .product-item {
+    display: flex; gap: 12px; align-items: center;
+    background: #0b1118; border: 1px solid var(--border-color);
+    border-radius: 8px; padding: 10px; margin-bottom: 10px;
+  }
+  .product-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
+  .product-info { flex: 1; min-width: 0; }
+  .product-info .p-name { font-weight: 600; }
+  .product-info .p-price { color: var(--accent-color); font-size: 14px; }
+  .product-item button { width: auto; padding: 8px 14px; font-size: 13px; margin-top: 0; }
+</style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
-<div class="container">
+<div id="loginOverlay">
+  <div class="login-box card">
+    <h1>MATHILLDA</h1>
+    <div class="form-group">
+      <label for="pwInput">Yönetici Şifresi</label>
+      <input type="password" id="pwInput" placeholder="Şifreyi girin">
+    </div>
+    <button onclick="checkPassword()">Giriş Yap</button>
+    <div id="pwError" class="status error" style="display:none;"></div>
+  </div>
+</div>
+
+<div id="panel" style="display:none;">
   <h1>MATHILLDA</h1>
-  <h2>Yeni Ürün Ekle</h2>
-  
-  <div id="statusBox" class="status"></div>
 
-  <div class="form-group">
-    <label for="category">Kategori</label>
-    <select id="category">
-      <option value="Çikolata">Çikolata (Chocolate)</option>
-      <option value="Pasta">Pasta (Cake)</option>
-    </select>
+  <div class="tabs">
+    <button class="tab-btn active" id="tabBtn-add" onclick="showTab('add')">Ürün Ekle</button>
+    <button class="tab-btn" id="tabBtn-list" onclick="showTab('list')">Ürünler</button>
+    <button class="tab-btn" id="tabBtn-settings" onclick="showTab('settings')">Ayarlar</button>
   </div>
 
-  <div class="form-group">
-    <label for="name_tr">Ürün Adı (Türkçe)</label>
-    <input type="text" id="name_tr" placeholder="Örn: Safir Elmas Serisi">
+  <div id="tab-add" class="tab-content active">
+    <div class="card">
+      <h2>Yeni Ürün Ekle</h2>
+      <div id="addStatus" class="status"></div>
+
+      <div class="form-group">
+        <label>Kategori</label>
+        <select id="p_category">
+          <option value="cikolata">Çikolata</option>
+          <option value="pasta">Pasta</option>
+          <option value="tek_pasta">Tek Pasta</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Ürün Adı (Türkçe)</label>
+        <input type="text" id="p_name_tr" placeholder="Örn: Safir Elmas Serisi">
+      </div>
+
+      <div class="form-group">
+        <label>Ürün Açıklaması (Türkçe)</label>
+        <textarea id="p_desc_tr" rows="4" placeholder="Ürün özelliklerini yazın..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Fiyat (EUR)</label>
+        <input type="number" id="p_price" placeholder="Örn: 45">
+      </div>
+
+      <div class="form-group">
+        <label>Ürün Görseli</label>
+        <input type="file" id="p_image" accept="image/*">
+      </div>
+
+      <div class="form-group">
+        <label>Ürün Adı (Arapça) — isteğe bağlı, otomatik çevrilmez</label>
+        <input type="text" id="p_name_ar" placeholder="اسم المنتج" dir="rtl">
+      </div>
+
+      <div class="form-group">
+        <label>Ürün Açıklaması (Arapça) — isteğe bağlı, otomatik çevrilmez</label>
+        <textarea id="p_desc_ar" rows="3" placeholder="وصف المنتج" dir="rtl"></textarea>
+      </div>
+
+      <button onclick="saveProduct()">Ürünü Çevir ve Kaydet</button>
+    </div>
   </div>
 
-  <div class="form-group">
-    <label for="price">Fiyat (EUR)</label>
-    <input type="number" id="price" placeholder="Örn: 45">
+  <div id="tab-list" class="tab-content">
+    <div class="card">
+      <h2>Ürünler</h2>
+      <div id="listStatus" class="status"></div>
+      <div id="productListContainer"></div>
+    </div>
   </div>
 
-  <div class="form-group">
-    <label for="description_tr">Ürün Açıklaması (Türkçe)</label>
-    <textarea id="description_tr" rows="4" placeholder="Ürün özelliklerini yazın..."></textarea>
-  </div>
+  <div id="tab-settings" class="tab-content">
+    <div class="card">
+      <h2>İletişim ve Sosyal Medya</h2>
+      <div id="settingsStatus" class="status"></div>
 
-  <div class="form-group">
-    <label for="image">Ürün Görseli</label>
-    <input type="file" id="image" accept="image/*">
-  </div>
+      <div class="form-group">
+        <label>Instagram URL</label>
+        <input type="text" id="s_instagram" placeholder="https://instagram.com/...">
+      </div>
 
-  <button onclick="saveProductAndTranslate()">Ürünü Çevir ve Kaydet</button>
+      <div class="form-group">
+        <label>Facebook URL</label>
+        <input type="text" id="s_facebook" placeholder="https://facebook.com/...">
+      </div>
+
+      <div class="form-group">
+        <label>WhatsApp Numarası (ülke koduyla)</label>
+        <input type="text" id="s_whatsapp" placeholder="+49...">
+      </div>
+
+      <div class="form-group">
+        <label>E-posta</label>
+        <input type="email" id="s_email" placeholder="mathillda@...">
+      </div>
+
+      <button onclick="saveSettings()">Ayarları Kaydet</button>
+    </div>
+  </div>
 </div>
 
 <script>
-  const SUPABASE_URL = "https://olzohyonqioucwtnkfya.supabase.co"; 
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sem9oeW9ucWlvdWN3dG5rZnlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MzQ2NzQsImV4cCI6MjA5OTUxMDY3NH0.uoW5CzM9HI-rJg4E0UMWj2QL6TbIAirRf1L31TZnl8Q"; 
-  const TRANSLATE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/translate`;
-
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  function showStatus(message, type) {
-    const box = document.getElementById('statusBox');
-    box.className = `status ${type}`;
-    box.innerHTML = message;
-  }
-
-  async function translateText(text, targetLang) {
-    if (!text) return "";
-    try {
-      const response = await fetch(TRANSLATE_FUNCTION_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({ 
-          text: text, 
-          target_lang: targetLang 
-        })
-      });
-      
-      const responseText = await response.text();
-      let data = {};
-      try {
-        data = JSON.parse(responseText);
-      } catch(e) {
-        throw new Error(`Çeviri Sunucu Hatası (Metin): ${responseText}`);
-      }
-
-      if (!response.ok) {
-        throw new Error(data.error || `Çeviri Hatası (Kod: ${response.status})`);
-      }
-      return data.text || data.translatedText || data.translated_text || data.translation || text;
-    } catch (err) {
-      throw new Error(`${targetLang} diline çevirirken hata oluştu: ${err.message}`);
-    }
-  }
-
-  async function saveProductAndTranslate() {
-    const category = document.getElementById('category').value;
-    const name_tr = document.getElementById('name_tr').value;
-    const price = document.getElementById('price').value;
-    const description_tr = document.getElementById('description_tr').value;
-    const imageFile = document.getElementById('image').files[0];
-
-    if (!name_tr || !price || !description_tr || !imageFile) {
-      showStatus("Lütfen tüm alanları doldurun ve bir görsel seçin!", "error");
-      return;
-    }
-
-    try {
-      // ADIM 1: GÖRSEL YÜKLEME
-      showStatus("Adım 1/3: Görsel depoya yükleniyor...", "loading");
-      const fileExt = imageFile.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `product-images/${fileName}`;
-
-      const { data: uploadData, error: uploadError } = await supabaseClient.storage
-        .from('images')
-        .upload(filePath, imageFile);
-
-      if (uploadError) {
-        throw new Error(`Görsel Yükleme Hatası (Bucket adını veya izinleri kontrol edin): ${uploadError.message}`);
-      }
-
-      const { data: { publicUrl } } = supabaseClient.storage
-        .from('images')
-        .getPublicUrl(filePath);
-
-
-      // ADIM 2: ÇEVİRİ ALMA
-      showStatus("Adım 2/3: Metinler çevriliyor...", "loading");
-      const languages = ['DE', 'EN', 'FR', 'IT', 'ES', 'RU', 'AR'];
-      const translations = {};
-
-      for (const lang of languages) {
-        showStatus(`Adım 2/3: ${lang} diline çevriliyor...`, "loading");
-        const lowerLang = lang.toLowerCase();
-        translations[`name_${lowerLang}`] = await translateText(name_tr, lang);
-        translations[`description_${lowerLang}`] = await translateText(description_tr, lang);
-      }
-
-
-      // ADIM 3: VERİTABANINA KAYDETME
-      showStatus("Adım 3/3: Ürün veritabanına ekleniyor...", "loading");
-
-      const { error: insertError } = await supabaseClient
-        .from('products')
-        .insert([{
-          category: category,
-          price: parseFloat(price),
-          image_url: publicUrl,
-          name_tr: name_tr,
-          description_tr: description_tr,
-          ...translations
-        }]);
-
-      if (insertError) {
-        throw new Error(`Veritabanı Kayıt Hatası (Tablo veya Kolon uyuşmazlığı): ${insertError.message}`);
-      }
-
-      showStatus("Ürün başarıyla kaydedildi ve tüm dillere otomatik çevrildi! 🎉", "success");
-      
-      document.getElementById('name_tr').value = "";
-      document.getElementById('price').value = "";
-      document.getElementById('description_tr').value = "";
-      document.getElementById('image').value = "";
-
-    } catch (error) {
-      showStatus(`Sistem Hatası: ${error.message}`, "error");
-    }
-  }
-</script>
-</body>
-</html>
-      margin-bottom: 15px;
-    }
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-      color: var(--accent-color);
-    }
-    input[type="text"], input[type="number"], select, textarea {
-      width: 100%;
-      padding: 12px;
-      border-radius: 6px;
-      border: 1px solid #2e3e52;
-      background-color: #0b1118;
-      color: #fff;
-      font-size: 16px;
-      box-sizing: border-box;
-    }
-    button {
-      width: 100%;
-      padding: 14px;
-      background-color: var(--accent-color);
-      color: #000;
-      border: none;
-      border-radius: 6px;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .status {
-      margin-top: 15px;
-      padding: 12px;
-      border-radius: 6px;
-      text-align: center;
-      display: none;
-    }
-    .status.success { background-color: #1b4d3e; color: #5effbc; display: block; }
-    .status.loading { background-color: #3b2c11; color: #ffd166; display: block; }
-    .status.error { background-color: #4a1d1d; color: #ff9e9e; display: block; }
-  </style>
-</head>
-<body>
-
-<div class="container">
-  <h1>MATHILLDA</h1>
-  <h2>Yeni Ürün Ekle</h2>
-  
-  <div id="statusBox" class="status"></div>
-
-  <div class="form-group">
-    <label for="category">Kategori</label>
-    <select id="category">
-      <option value="Çikolata">Çikolata (Chocolate)</option>
-      <option value="Pasta">Pasta (Cake)</option>
-    </select>
-  </div>
-
-  <div class="form-group">
-    <label for="name_tr">Ürün Adı (Türkçe)</label>
-    <input type="text" id="name_tr" placeholder="Örn: Safir Elmas Serisi">
-  </div>
-
-  <div class="form-group">
-    <label for="price">Fiyat (EUR)</label>
-    <input type="number" id="price" placeholder="Örn: 45">
-  </div>
-
-  <div class="form-group">
-    <label for="description_tr">Ürün Açıklaması (Türkçe)</label>
-    <textarea id="description_tr" rows="4" placeholder="Ürün özelliklerini yazın..."></textarea>
-  </div>
-
-  <div class="form-group">
-    <label for="image">Ürün Görseli</label>
-    <input type="file" id="image" accept="image/*">
-  </div>
-
-  <button onclick="saveProductAndTranslate()">Ürünü Çevir ve Kaydet</button>
-</div>
-
-<script>
-  const SUPABASE_URL = "https://olzohyonqioucwtnkfya.supabase.co"; 
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sem9oeW9ucWlvdWN3dG5rZnlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MzQ2NzQsImV4cCI6MjA5OTUxMDY3NH0.uoW5CzM9HI-rJg4E0UMWj2QL6TbIAirRf1L31TZnl8Q"; 
-  const TRANSLATE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/translate`;
-
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  function showStatus(message, type) {
-    const box = document.getElementById('statusBox');
-    box.className = `status ${type}`;
-    box.innerHTML = message;
-  }
-
-  // Supabase Edge fonksiyonunu kullanarak güvenli çeviri yapan fonksiyon
-  async function translateText(text, targetLang) {
-    if (!text) return "";
-    try {
-      const response = await fetch(TRANSLATE_FUNCTION_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({ 
-          text: text, 
-          target_lang: targetLang 
-        })
-      });
-      
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Çeviri servisi hatası");
-      }
-      // Edge fonksiyonunuzun döndürdüğü olası veri yapılarını desteklemek için:
-      return data.text || data.translatedText || data.translated_text || data.translation || text;
-    } catch (err) {
-      console.error(`${targetLang} çeviri hatası:`, err);
-      return text; // Hata durumunda orijinal Türkçe metni koru
-    }
-  }
-
-  async function saveProductAndTranslate() {
-    const category = document.getElementById('category').value;
-    const name_tr = document.getElementById('name_tr').value;
-    const price = document.getElementById('price').value;
-    const description_tr = document.getElementById('description_tr').value;
-    const imageFile = document.getElementById('image').files[0];
-
-    if (!name_tr || !price || !description_tr || !imageFile) {
-      showStatus("Lütfen tüm alanları doldurun ve bir görsel seçin!", "error");
-      return;
-    }
-
-    showStatus("Görsel yükleniyor... Lütfen bekleyin.", "loading");
-
-    try {
-      // 1. Görseli Supabase Storage'a yükleme
-      const fileExt = imageFile.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `product-images/${fileName}`;
-
-      const { data: uploadData, error: uploadError } = await supabaseClient.storage
-        .from('images')
-        .upload(filePath, imageFile);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabaseClient.storage
-        .from('images')
-        .getPublicUrl(filePath);
-
-      // 2. Edge Function ile dilleri sırayla çevirme
-      const languages = ['DE', 'EN', 'FR', 'IT', 'ES', 'RU', 'AR'];
-      const translations = {};
-
-      for (const lang of languages) {
-        showStatus(`Türkçe içerik ${lang} diline çevriliyor...`, "loading");
-        const lowerLang = lang.toLowerCase();
-        translations[`name_${lowerLang}`] = await translateText(name_tr, lang);
-        translations[`description_${lowerLang}`] = await translateText(description_tr, lang);
-      }
-
-      showStatus("Ürün veritabanına kaydediliyor...", "loading");
-
-      // 3. Çeviriler ve görsel URL'i ile birlikte ürünü doğrudan veritabanına ekleme
-      const { error: insertError } = await supabaseClient
-        .from('products')
-        .insert([{
-          category: category,
-          price: parseFloat(price),
-          image_url: publicUrl,
-          name_tr: name_tr,
-          description_tr: description_tr,
-          ...translations
-        }]);
-
-      if (insertError) throw insertError;
-
-      showStatus("Ürün başarıyla kaydedildi ve tüm dillere otomatik çevrildi! 🎉", "success");
-      
-      // Formu sıfırla
-      document.getElementById('name_tr').value = "";
-      document.getElementById('price').value = "";
-      document.getElementById('description_tr').value = "";
-      document.getElementById('image').value = "";
-
-    } catch (error) {
-      showStatus(`Sistem Hatası: ${error.message}`, "error");
-    }
-  }
-</script>
-</body>
-</html>
-    }
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-      color: var(--accent-color);
-    }
-    input[type="text"], input[type="number"], select, textarea {
-      width: 100%;
-      padding: 12px;
-      border-radius: 6px;
-      border: 1px solid #2e3e52;
-      background-color: #0b1118;
-      color: #fff;
-      font-size: 16px;
-      box-sizing: border-box;
-    }
-    button {
-      width: 100%;
-      padding: 14px;
-      background-color: var(--accent-color);
-      color: #000;
-      border: none;
-      border-radius: 6px;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .status {
-      margin-top: 15px;
-      padding: 12px;
-      border-radius: 6px;
-      text-align: center;
-      display: none;
-    }
-    .status.success { background-color: #1b4d3e; color: #5effbc; display: block; }
-    .status.loading { background-color: #3b2c11; color: #ffd166; display: block; }
-    .status.error { background-color: #4a1d1d; color: #ff9e9e; display: block; }
-  </style>
-</head>
-<body>
-
-<div class="container">
-  <h1>MATHILLDA</h1>
-  <h2>Yeni Ürün Ekle</h2>
-  
-  <div id="statusBox" class="status"></div>
-
-  <div class="form-group">
-    <label for="category">Kategori</label>
-    <select id="category">
-      <option value="Çikolata">Çikolata (Chocolate)</option>
-      <option value="Pasta">Pasta (Cake)</option>
-    </select>
-  </div>
-
-  <div class="form-group">
-    <label for="name_tr">Ürün Adı (Türkçe)</label>
-    <input type="text" id="name_tr" placeholder="Örn: Safir Elmas Serisi">
-  </div>
-
-  <div class="form-group">
-    <label for="price">Fiyat (EUR)</label>
-    <input type="number" id="price" placeholder="Örn: 45">
-  </div>
-
-  <div class="form-group">
-    <label for="description_tr">Ürün Açıklaması (Türkçe)</label>
-    <textarea id="description_tr" rows="4" placeholder="Ürün özelliklerini yazın..."></textarea>
-  </div>
-
-  <div class="form-group">
-    <label for="image">Ürün Görseli</label>
-    <input type="file" id="image" accept="image/*">
-  </div>
-
-  <button onclick="saveProduct()">Ürünü Çevir ve Kaydet</button>
-</div>
-
-<script>
-  const TRANSLATE_FUNCTION_URL = "https://olzohyonqioucwtnkfya.supabase.co/functions/v1/translate";
+  const SUPABASE_URL = "https://olzohyonqioucwtnkfya.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sem9oeW9ucWlvdWN3dG5rZnlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM5MzQ2NzQsImV4cCI6MjA5OTUxMDY3NH0.uoW5CzM9HI-rJg4E0UMWj2QL6TbIAirRf1L31TZnl8Q";
+  const ADMIN_PASSWORD = "mathillda2026";
+  const TRANSLATE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/translate`;
+  const AUTO_LANGS = ["DE", "EN", "FR", "IT", "ES", "RU"];
+  const CATEGORY_LABELS = { cikolata: "Çikolata", pasta: "Pasta", tek_pasta: "Tek Pasta" };
 
-  function showStatus(message, type) {
-    const box = document.getElementById('statusBox');
-    box.className = `status ${type}`;
-    box.innerHTML = message;
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  function checkPassword() {
+    const val = document.getElementById('pwInput').value;
+    const errBox = document.getElementById('pwError');
+    if (val === ADMIN_PASSWORD) {
+      sessionStorage.setItem('mathillda_admin_auth', 'true');
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('panel').style.display = 'block';
+    } else {
+      errBox.textContent = "Şifre yanlış.";
+      errBox.style.display = 'block';
+    }
   }
 
-  function toBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = error => reject(error);
+  window.addEventListener('DOMContentLoaded', () => {
+    if (sessionStorage.getItem('mathillda_admin_auth') === 'true') {
+      document.getElementById('loginOverlay').style.display = 'none';
+      document.getElementById('panel').style.display = 'block';
+    }
+    document.getElementById('pwInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') checkPassword();
     });
+  });
+
+  function showTab(name) {
+    ['add', 'list', 'settings'].forEach(t => {
+      document.getElementById(`tab-${t}`).classList.toggle('active', t === name);
+      document.getElementById(`tabBtn-${t}`).classList.toggle('active', t === name);
+    });
+    if (name === 'list') loadProducts();
+    if (name === 'settings') loadSettings();
+  }
+
+  function setStatus(elId, message, type) {
+    const box = document.getElementById(elId);
+    box.className = `status ${type}`;
+    box.textContent = message;
+  }
+
+  async function translateText(text, targetLang) {
+    if (!text) return "";
+    const response = await fetch(TRANSLATE_FUNCTION_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({ text: text, target_lang: targetLang })
+    });
+    const raw = await response.text();
+    let data = {};
+    try { data = JSON.parse(raw); } catch (e) {
+      throw new Error(`Çeviri sunucu hatası: ${raw}`);
+    }
+    if (!response.ok) throw new Error(data.error || `Çeviri hatası (${response.status})`);
+    return data.text || data.translatedText || data.translated_text || data.translation || text;
   }
 
   async function saveProduct() {
-    const category = document.getElementById('category').value;
-    const name_tr = document.getElementById('name_tr').value;
-    const price = document.getElementById('price').value;
-    const description_tr = document.getElementById('description_tr').value;
-    const imageFile = document.getElementById('image').files[0];
+    const category = document.getElementById('p_category').value;
+    const name_tr = document.getElementById('p_name_tr').value.trim();
+    const description_tr = document.getElementById('p_desc_tr').value.trim();
+    const price = document.getElementById('p_price').value;
+    const imageFile = document.getElementById('p_image').files[0];
+    const name_ar = document.getElementById('p_name_ar').value.trim();
+    const description_ar = document.getElementById('p_desc_ar').value.trim();
 
-    if (!name_tr || !price || !description_tr || !imageFile) {
-      showStatus("Lütfen tüm alanları doldurun ve bir görsel seçin!", "error");
+    if (!name_tr || !description_tr || !price || !imageFile) {
+      setStatus('addStatus', "Lütfen kategori dışındaki tüm alanları doldurun ve bir görsel seçin.", "error");
       return;
     }
 
-    showStatus("Ürün bilgileri ve görsel gönderiliyor... Lütfen bekleyin.", "loading");
-
     try {
-      const base64Image = await toBase64(imageFile);
-      
-      const response = await fetch(TRANSLATE_FUNCTION_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
-        },
-        body: JSON.stringify({
-          category: category,
-          price: parseFloat(price),
-          name_tr: name_tr,
-          description_tr: description_tr,
-          image_data: base64Image,
-          image_name: imageFile.name
-        })
+      setStatus('addStatus', "Adım 1/3: Görsel yükleniyor...", "loading");
+      const fileExt = imageFile.name.split('.').pop();
+      const filePath = `product-images/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabaseClient.storage
+        .from('images')
+        .upload(filePath, imageFile);
+      if (uploadError) throw new Error(`Görsel yükleme hatası: ${uploadError.message}`);
+
+      const { data: { publicUrl } } = supabaseClient.storage.from('images').getPublicUrl(filePath);
+
+      setStatus('addStatus', "Adım 2/3: Metinler çevriliyor...", "loading");
+      const translations = {};
+      for (const lang of AUTO_LANGS) {
+        setStatus('addStatus', `Adım 2/3: ${lang} diline çevriliyor...`, "loading");
+        const lower = lang.toLowerCase();
+        translations[`name_${lower}`] = await translateText(name_tr, lang);
+        translations[`description_${lower}`] = await translateText(description_tr, lang);
+      }
+
+      setStatus('addStatus', "Adım 3/3: Ürün kaydediliyor...", "loading");
+      const { error: insertError } = await supabaseClient.from('products').insert([{
+        category, price: parseFloat(price), image_url: publicUrl,
+        name_tr, description_tr,
+        name_ar: name_ar || null, description_ar: description_ar || null,
+        ...translations
+      }]);
+      if (insertError) throw new Error(`Veritabanı hatası: ${insertError.message}`);
+
+      setStatus('addStatus', "Ürün başarıyla kaydedildi ve 6 dile otomatik çevrildi! 🎉", "success");
+      document.getElementById('p_name_tr').value = "";
+      document.getElementById('p_desc_tr').value = "";
+      document.getElementById('p_price').value = "";
+      document.getElementById('p_image').value = "";
+      document.getElementById('p_name_ar').value = "";
+      document.getElementById('p_desc_ar').value = "";
+    } catch (err) {
+      setStatus('addStatus', `Hata: ${err.message}`, "error");
+    }
+  }
+
+  async function loadProducts() {
+    const container = document.getElementById('productListContainer');
+    container.innerHTML = "Yükleniyor...";
+    const { data, error } = await supabaseClient
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      setStatus('listStatus', `Hata: ${error.message}`, "error");
+      container.innerHTML = "";
+      return;
+    }
+
+    container.innerHTML = "";
+    ['cikolata', 'pasta', 'tek_pasta'].forEach(cat => {
+      const items = data.filter(p => p.category === cat);
+      if (items.length === 0) return;
+      const block = document.createElement('div');
+      block.className = 'category-block';
+      block.innerHTML = `<h3>${CATEGORY_LABELS[cat]}</h3>`;
+      items.forEach(p => {
+        const row = document.createElement('div');
+        row.className = 'product-item';
+        row.innerHTML = `
+          <img src="${p.image_url}" alt="${p.name_tr}">
+          <div class="product-info">
+            <div class="p-name">${p.name_tr}</div>
+            <div class="p-price">${p.price} EUR</div>
+          </div>
+          <button class="danger" onclick="deleteProduct('${p.id}', '${p.image_url}')">Sil</button>
+        `;
+        block.appendChild(row);
       });
+      container.appendChild(block);
+    });
 
-      const responseText = await response.text();
-      let result = {};
-      try {
-        result = JSON.parse(responseText);
-      } catch(e) {
-        result = { error: responseText };
+    if (data.length === 0) container.innerHTML = "Henüz ürün eklenmedi.";
+  }
+
+  async function deleteProduct(id, imageUrl) {
+    if (!confirm("Bu ürünü silmek istediğine emin misin?")) return;
+    try {
+      setStatus('listStatus', "Siliniyor...", "loading");
+      const marker = '/object/public/images/';
+      const idx = imageUrl.indexOf(marker);
+      if (idx !== -1) {
+        const path = imageUrl.substring(idx + marker.length);
+        await supabaseClient.storage.from('images').remove([path]);
       }
+      const { error } = await supabaseClient.from('products').delete().eq('id', id);
+      if (error) throw new Error(error.message);
+      setStatus('listStatus', "Ürün silindi.", "success");
+      loadProducts();
+    } catch (err) {
+      setStatus('listStatus', `Hata: ${err.message}`, "error");
+    }
+  }
 
-      if (!response.ok) {
-        throw new Error(result.error || `HTTP hata kodu: ${response.status}`);
-      }
+  async function loadSettings() {
+    const { data, error } = await supabaseClient.from('settings').select('*').eq('id', 1).single();
+    if (error) {
+      setStatus('settingsStatus', `Hata: ${error.message}`, "error");
+      return;
+    }
+    document.getElementById('s_instagram').value = data.instagram_url || "";
+    document.getElementById('s_facebook').value = data.facebook_url || "";
+    document.getElementById('s_whatsapp').value = data.whatsapp_number || "";
+    document.getElementById('s_email').value = data.contact_email || "";
+  }
 
-      showStatus("Ürün başarıyla kaydedildi ve otomatik çevrildi! 🎉", "success");
-      
-      document.getElementById('name_tr').value = "";
-      document.getElementById('price').value = "";
-      document.getElementById('description_tr').value = "";
-      document.getElementById('image').value = "";
+  async function saveSettings() {
+    const instagram_url = document.getElementById('s_instagram').value.trim();
+    const facebook_url = document.getElementById('s_facebook').value.trim();
+    const whatsapp_number = document.getElementById('s_whatsapp').value.trim();
+    const contact_email = document.getElementById('s_email').value.trim();
 
-    } catch (error) {
-      showStatus(`Sistem Hatası: ${error.message}`, "error");
+    setStatus('settingsStatus', "Kaydediliyor...", "loading");
+    const { error } = await supabaseClient
+      .from('settings')
+      .update({ instagram_url, facebook_url, whatsapp_number, contact_email, updated_at: new Date().toISOString() })
+      .eq('id', 1);
+
+    if (error) {
+      setStatus('settingsStatus', `Hata: ${error.message}`, "error");
+    } else {
+      setStatus('settingsStatus', "Ayarlar kaydedildi. 🎉", "success");
     }
   }
 </script>
